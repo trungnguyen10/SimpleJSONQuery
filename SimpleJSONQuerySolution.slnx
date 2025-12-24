@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="QueryParserLib.Tests/QueryParserLib.Tests.csproj" />
+  <Project Path="QueryParserLib/QueryParserLib.csproj" />
+</Solution>
