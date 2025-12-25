@@ -46,7 +46,7 @@ public static class QueryParser
             var ch = expression[pos];
             if (ch == '\\')
             {
-                AppendWithEscape(sb, expression, ref pos, new[] { '\\', '.' }, "compact dot name");
+                AppendWithEscape(sb, expression, ref pos, new[] { '\\', '[', ']', '.', '\'' }, "compact dot name");
             }
             else if (char.IsWhiteSpace(ch) || ch == SelectorOpen)
             {
@@ -163,7 +163,7 @@ public static class QueryParser
                     pos++;
                     continue;
                 }
-                AppendWithEscape(sb, expression, ref pos, null, "selector");
+                AppendWithEscape(sb, expression, ref pos, new[] { '\\', '[', ']', '.', '\'' }, "selector");
                 continue;
             }
 

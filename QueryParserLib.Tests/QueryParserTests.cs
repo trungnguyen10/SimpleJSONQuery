@@ -147,4 +147,58 @@ public class QueryParserTests
     {
         Assert.Throws<FormatException>(() => QueryParser.Parse(".name\\a"));
     }
+
+    [Fact]
+    public void Parse_EscapedBackslash()
+    {
+        var result = QueryParser.Parse("['a\\\\b']");
+        Assert.Single(result);
+        Assert.Equal("a\\b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_EscapedLeftBracket()
+    {
+        var result = QueryParser.Parse("['a\\[b']");
+        Assert.Single(result);
+        Assert.Equal("a[b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_EscapedRightBracket()
+    {
+        var result = QueryParser.Parse("['a\\]b']");
+        Assert.Single(result);
+        Assert.Equal("a]b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_EscapedLeftBracket()
+    {
+        var result = QueryParser.Parse(".a\\[b");
+        Assert.Single(result);
+        Assert.Equal("a[b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_EscapedRightBracket()
+    {
+        var result = QueryParser.Parse(".a\\]b");
+        Assert.Single(result);
+        Assert.Equal("a]b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_EscapedSingleQuote()
+    {
+        var result = QueryParser.Parse(".a\\'b");
+        Assert.Single(result);
+        Assert.Equal("a'b", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
 }
