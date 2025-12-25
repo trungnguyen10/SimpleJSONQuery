@@ -16,7 +16,7 @@ SimpleJSONQuery provides a simple way to parse JSON path-like query expressions 
 
 ## Installation
 
-Add the library to your project via NuGet (when published) or reference the project directly.
+Reference the project directly.
 
 ## Usage
 
@@ -92,7 +92,7 @@ var result = QueryParser.Parse("$['items'][0]");
 
 // Nested access
 var result = QueryParser.Parse("$['data']['users'][0]['name']");
-// 2 segments:
+// 3 segments:
 //   0: Name="data", Indices=[]
 //   1: Name="users", Indices=[0]
 //   2: Name="name", Indices=[]
