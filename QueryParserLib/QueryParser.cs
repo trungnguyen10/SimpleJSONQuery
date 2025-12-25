@@ -78,7 +78,8 @@ public static class QueryParser
     /// <exception cref="FormatException">Thrown when the expression has invalid syntax.</exception>
     /// <remarks>
     /// The expression syntax is as follows:
-    /// - Expression contains one or more selectors, must start with a name_selector.
+    /// - Expression must start with <c>$</c> (root identifier).
+    /// - Expression contains one or more selectors after the root identifier.
     /// - Selectors are grouped into segments: each name_selector starts a new segment, followed by zero or more index_selectors.
     /// - name_selector: <c>['</c>string<c>']</c> or <c>.</c>string (compact dot notation)
     /// - index_selector: <c>[</c>integer<c>]</c>
@@ -92,6 +93,12 @@ public static class QueryParser
         var results = new List<Segment>();
         int pos = 0;
         Segment? currentSegment = null;
+
+        // All expressions must start with $
+        SkipWhitespace(expression, ref pos);
+        if (pos >= expression.Length || expression[pos] != '$')
+            throw new FormatException("Expression must start with '$' (root identifier)");
+        pos++; // consume $
 
         while (pos < expression.Length)
         {
