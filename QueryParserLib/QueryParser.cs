@@ -11,6 +11,32 @@ public static class QueryParser
     private const char SelectorClose = ']';
     private const char NameQuote = '\'';
 
+    private static void AppendWithEscape(StringBuilder sb, string expression, ref int pos, char[]? allowedEscapes, string context)
+    {
+        var ch = expression[pos];
+        if (ch == '\\')
+        {
+            pos++;
+            if (pos >= expression.Length)
+                throw new FormatException($"Invalid escape in {context}");
+            var next = expression[pos];
+            if (allowedEscapes == null || Array.IndexOf(allowedEscapes, next) >= 0)
+            {
+                sb.Append(next);
+                pos++;
+            }
+            else
+            {
+                throw new FormatException($"Invalid escape sequence '\\{next}' in {context}");
+            }
+        }
+        else
+        {
+            sb.Append(ch);
+            pos++;
+        }
+    }
+
     // Parse an expression into ordered list of segments.
     // Syntax assumed:
     // - Expression contains one or more selectors, must start with a name_selector.
@@ -43,19 +69,7 @@ public static class QueryParser
                     var ch = expression[pos];
                     if (ch == '\\')
                     {
-                        pos++;
-                        if (pos >= expression.Length)
-                            throw new FormatException("Invalid escape in compact dot name");
-                        var next = expression[pos];
-                        if (next == '\\' || next == '.')
-                        {
-                            sb.Append(next);
-                            pos++;
-                        }
-                        else
-                        {
-                            throw new FormatException($"Invalid escape sequence '\\{next}' in compact dot name");
-                        }
+                        AppendWithEscape(sb, expression, ref pos, new[] { '\\', '.' }, "compact dot name");
                     }
                     else if (char.IsWhiteSpace(ch) || ch == SelectorOpen)
                     {
@@ -144,16 +158,7 @@ public static class QueryParser
                     pos++;
                     continue;
                 }
-                if (ch == '\\')
-                {
-                    pos++;
-                    if (pos >= expression.Length) throw new FormatException("Invalid escape in selector");
-                    sb.Append(expression[pos]);
-                    pos++;
-                    continue;
-                }
-                sb.Append(ch);
-                pos++;
+                AppendWithEscape(sb, expression, ref pos, null, "selector");
                 continue;
             }
 
