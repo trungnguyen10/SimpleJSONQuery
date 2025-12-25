@@ -7,12 +7,16 @@ public sealed record Segment(string Name, IReadOnlyList<int> Indices);
 
 public static class QueryParser
 {
+    private const char SelectorOpen = '[';
+    private const char SelectorClose = ']';
+    private const char NameQuote = '\'';
+
     // Parse an expression into ordered list of segments.
     // Syntax assumed:
     // - Expression contains one or more selectors, must start with a name_selector.
     // - Selectors are grouped into segments: each name_selector starts a new segment, followed by zero or more index_selectors.
-    // - name_selector: ['string'] where string is enclosed in single quotes.
-    // - index_selector: [integer]
+    // - name_selector: [SelectorOpen NameQuote string NameQuote SelectorClose] or .string (compact dot notation)
+    // - index_selector: [SelectorOpen integer SelectorClose]
     public static List<Segment> Parse(string expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
@@ -26,7 +30,57 @@ public static class QueryParser
             SkipWhitespace(expression, ref pos);
             if (pos >= expression.Length) break;
 
-            var (isName, value) = ParseSelector(expression, ref pos);
+            bool isName;
+            string value;
+
+            if (expression[pos] == '.')
+            {
+                // Parse compact dot notation name selector
+                pos++; // skip '.'
+                var sb = new StringBuilder();
+                while (pos < expression.Length)
+                {
+                    var ch = expression[pos];
+                    if (ch == '\\')
+                    {
+                        pos++;
+                        if (pos >= expression.Length)
+                            throw new FormatException("Invalid escape in compact dot name");
+                        var next = expression[pos];
+                        if (next == '\\' || next == '.')
+                        {
+                            sb.Append(next);
+                            pos++;
+                        }
+                        else
+                        {
+                            throw new FormatException($"Invalid escape sequence '\\{next}' in compact dot name");
+                        }
+                    }
+                    else if (char.IsWhiteSpace(ch) || ch == SelectorOpen)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        sb.Append(ch);
+                        pos++;
+                    }
+                }
+                value = sb.ToString();
+                if (value.Length == 0)
+                    throw new FormatException("Empty name after '.' in compact dot notation");
+                isName = true;
+            }
+            else if (expression[pos] == SelectorOpen)
+            {
+                // Parse bracketed selector
+                (isName, value) = ParseSelector(expression, ref pos);
+            }
+            else
+            {
+                throw new FormatException($"Expected '.' or '{SelectorOpen}' at start of selector");
+            }
 
             if (isName)
             {
@@ -70,10 +124,10 @@ public static class QueryParser
 
     private static (bool IsName, string Value) ParseSelector(string expression, ref int pos)
     {
-        if (pos >= expression.Length || expression[pos] != '[')
-            throw new FormatException("Expected '[' at start of selector");
+        if (pos >= expression.Length || expression[pos] != SelectorOpen)
+            throw new FormatException($"Expected '{SelectorOpen}' at start of selector");
 
-        pos++; // skip '['
+        pos++; // skip SelectorOpen
         var sb = new StringBuilder();
         bool inQuotes = false;
         char quoteChar = '\0';
@@ -103,13 +157,13 @@ public static class QueryParser
                 continue;
             }
 
-            if (ch == ']')
+            if (ch == SelectorClose)
             {
                 pos++;
                 break;
             }
 
-            if (ch == '\'')
+            if (ch == NameQuote)
             {
                 wasQuoted = true;
                 inQuotes = true;

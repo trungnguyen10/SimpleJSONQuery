@@ -83,4 +83,68 @@ public class QueryParserTests
     {
         Assert.Throws<FormatException>(() => QueryParser.Parse("[0]"));
     }
+
+    [Fact]
+    public void Parse_CompactDot_SingleSegment_NameOnly()
+    {
+        var result = QueryParser.Parse(".person");
+        Assert.Single(result);
+        Assert.Equal("person", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_SingleSegment_WithIndices()
+    {
+        var result = QueryParser.Parse(".items[0][2]");
+        Assert.Single(result);
+        Assert.Equal("items", result[0].Name);
+        Assert.Equal(new[] { 0, 2 }, result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_MultipleSegments()
+    {
+        var result = QueryParser.Parse(".root[0].child[1]");
+        Assert.Equal(2, result.Count);
+        Assert.Equal("root", result[0].Name);
+        Assert.Equal(new[] { 0 }, result[0].Indices);
+        Assert.Equal("child", result[1].Name);
+        Assert.Equal(new[] { 1 }, result[1].Indices);
+    }
+
+    [Fact]
+    public void Parse_MixedNotation()
+    {
+        var result = QueryParser.Parse(".root[0]['child'][1]");
+        Assert.Equal(2, result.Count);
+        Assert.Equal("root", result[0].Name);
+        Assert.Equal(new[] { 0 }, result[0].Indices);
+        Assert.Equal("child", result[1].Name);
+        Assert.Equal(new[] { 1 }, result[1].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_EscapedPeriod()
+    {
+        var result = QueryParser.Parse(".my\\.selector");
+        Assert.Single(result);
+        Assert.Equal("my.selector", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_EscapedBackslash()
+    {
+        var result = QueryParser.Parse(".my\\\\name");
+        Assert.Single(result);
+        Assert.Equal("my\\name", result[0].Name);
+        Assert.Empty(result[0].Indices);
+    }
+
+    [Fact]
+    public void Parse_CompactDot_InvalidEscape()
+    {
+        Assert.Throws<FormatException>(() => QueryParser.Parse(".name\\a"));
+    }
 }
