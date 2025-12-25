@@ -37,6 +37,33 @@ public static class QueryParser
         }
     }
 
+    private static (bool IsName, string Value) ParseDotSelector(string expression, ref int pos)
+    {
+        pos++; // skip '.'
+        var sb = new StringBuilder();
+        while (pos < expression.Length)
+        {
+            var ch = expression[pos];
+            if (ch == '\\')
+            {
+                AppendWithEscape(sb, expression, ref pos, new[] { '\\', '.' }, "compact dot name");
+            }
+            else if (char.IsWhiteSpace(ch) || ch == SelectorOpen)
+            {
+                break;
+            }
+            else
+            {
+                sb.Append(ch);
+                pos++;
+            }
+        }
+        var value = sb.ToString();
+        if (value.Length == 0)
+            throw new FormatException("Empty name after '.' in compact dot notation");
+        return (true, value);
+    }
+
     // Parse an expression into ordered list of segments.
     // Syntax assumed:
     // - Expression contains one or more selectors, must start with a name_selector.
@@ -62,29 +89,7 @@ public static class QueryParser
             if (expression[pos] == '.')
             {
                 // Parse compact dot notation name selector
-                pos++; // skip '.'
-                var sb = new StringBuilder();
-                while (pos < expression.Length)
-                {
-                    var ch = expression[pos];
-                    if (ch == '\\')
-                    {
-                        AppendWithEscape(sb, expression, ref pos, new[] { '\\', '.' }, "compact dot name");
-                    }
-                    else if (char.IsWhiteSpace(ch) || ch == SelectorOpen)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        sb.Append(ch);
-                        pos++;
-                    }
-                }
-                value = sb.ToString();
-                if (value.Length == 0)
-                    throw new FormatException("Empty name after '.' in compact dot notation");
-                isName = true;
+                (isName, value) = ParseDotSelector(expression, ref pos);
             }
             else if (expression[pos] == SelectorOpen)
             {
