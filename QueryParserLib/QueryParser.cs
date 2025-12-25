@@ -3,6 +3,11 @@ using System.Text;
 
 namespace QueryParserLib;
 
+/// <summary>
+/// Represents a segment in a JSON query path, consisting of a property name and optional array indices.
+/// </summary>
+/// <param name="Name">The name of the property or field.</param>
+/// <param name="Indices">A read-only list of integer indices for array access within this segment.</param>
 public sealed record Segment(string Name, IReadOnlyList<int> Indices);
 
 public static class QueryParser
@@ -64,12 +69,22 @@ public static class QueryParser
         return (true, value);
     }
 
-    // Parse an expression into ordered list of segments.
-    // Syntax assumed:
-    // - Expression contains one or more selectors, must start with a name_selector.
-    // - Selectors are grouped into segments: each name_selector starts a new segment, followed by zero or more index_selectors.
-    // - name_selector: [SelectorOpen NameQuote string NameQuote SelectorClose] or .string (compact dot notation)
-    // - index_selector: [SelectorOpen integer SelectorClose]
+    /// <summary>
+    /// Parses a JSON query expression into an ordered list of segments.
+    /// </summary>
+    /// <param name="expression">The query expression to parse.</param>
+    /// <returns>A list of <see cref="Segment"/> objects representing the parsed query.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="expression"/> is null.</exception>
+    /// <exception cref="FormatException">Thrown when the expression has invalid syntax.</exception>
+    /// <remarks>
+    /// The expression syntax is as follows:
+    /// - Expression contains one or more selectors, must start with a name_selector.
+    /// - Selectors are grouped into segments: each name_selector starts a new segment, followed by zero or more index_selectors.
+    /// - name_selector: <c>['</c>string<c>']</c> or <c>.</c>string (compact dot notation)
+    /// - index_selector: <c>[</c>integer<c>]</c>
+    /// 
+    /// Supported escape sequences in strings: <c>\</c>, <c>[</c>, <c>]</c>, <c>.</c>, <c>'</c>
+    /// </remarks>
     public static List<Segment> Parse(string expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
